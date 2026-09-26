@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Могила</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --stone-1:#8a8d82;
+    --stone-2:#5c5f56;
+    --stone-3:#333630;
+    --ink:#d8d5c8;
+    --amber:#c99a56;
+    --moss:#5c7248;
+    box-sizing:border-box;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%; margin:0;}
+  body{
+    overflow:hidden;
+    background:#000;
+    color:var(--ink);
+    font-family:'Cormorant Garamond', serif;
+    perspective:1400px;
+  }
+
+  /* procedural noise tile, used everywhere instead of flat photos */
+  :root{
+    --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    --noise-coarse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.045' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ================= the rig: everything below tilts + falls as one body ================= */
+  #world{
+    position:absolute;
+    inset:0;
+    transform-origin:50% 30%;
+    will-change:transform, filter;
+    transform:none;
+  }
+  #world.tilt{
+    transition: transform 1050ms cubic-bezier(.32,0,.2,1);
+    transform: rotateX(-16deg) scale(1.06);
+  }
+  #world.fall{
+    transition: transform 2150ms cubic-bezier(.55,0,.85,.45), filter 1950ms ease-in;
+    transform: translateY(-165vh) scale(1.3) rotateX(-24deg);
+    filter: blur(15px) brightness(0.05) contrast(1.25);
+  }
+  /* safety net: nothing but the tombstone itself is ever clickable */
+  #world > *:not(.yard){ pointer-events:none; }
+
+  .sky{
+    pointer-events:none;
+    position:absolute; inset:-10% -10% 40% -10%;
+    background:
+      radial-gradient(ellipse 60px 60px at 76% 22%, #fbf6e6 0%, #eee3bd 45%, rgba(238,227,189,0) 72%),
+      linear-gradient(180deg,#050810 0%,#0c101b 32%,#171a22 58%,#20221f 100%);
+  }
+  .sky::after{
+    content:"";
+    position:absolute; inset:0;
+    background-image: var(--noise);
+    opacity:0.05;
+    mix-blend-mode:overlay;
+  }
+  .stars{
+    pointer-events:none;
+    position:absolute; inset:-10% -10% 55% -10%;
+    background-image:
+      radial-gradient(1px 1px at 12% 18%, #fff 100%, transparent 100%),
+      radial-gradient(1px 1px at 27% 34%, #fff 100%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 40% 12%, #fff 100%, transparent 100%),
+      radial-gradient(1px 1px at 58% 28%, #fff 100%, transparent 100%),
+      radial-gradient(1px 1px at 68% 8%, #fff 100%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 85% 20%, #fff 100%, transparent 100%),
+      radial-gradient(1px 1px at 92% 38%, #fff 100%, transparent 100%),
+      radial-gradient(1px 1px at 20% 46%, #fff 100%, transparent 100%);
+    opacity:0.55;
+  }
+
+  .hill{
+    pointer-events:none;
+    position:absolute;
+    left:-15%; width:130%;
+    bottom:42%;
+    height:16vh;
+    background:#0e0f0c;
+    border-radius:50% 50% 0 0/100% 100% 0 0;
+  }
+  .hill.back{ bottom:46%; height:11vh; background:#181a17; opacity:0.85; }
+
+  .tree{
+    pointer-events:none;
+    position:absolute;
+    bottom:44%;
+    right:9%;
+    width:3px;
+    height:16vh;
+    background:linear-gradient(#0c0d0b,#050504);
+    filter:blur(0.2px);
+  }
+  .tree i{
+    position:absolute; display:block;
+    width:2px; background:#0a0b09; top:10%;
+    transform-origin:bottom;
+  }
+  .tree i:nth-child(1){ height:38%; left:0; transform:rotate(-32deg); }
+  .tree i:nth-child(2){ height:32%; left:0; transform:rotate(24deg); }
+  .tree i:nth-child(3){ height:26%; left:0; top:32%; transform:rotate(-18deg); }
+  .tree i:nth-child(4){ height:22%; left:0; top:40%; transform:rotate(30deg); }
+
+  /* ================= the ground: real 3D floor plane, split into two flaps ================= */
+  .floor-wrap{
+    position:absolute; left:0; right:0; bottom:0;
+    height:58%;
+    pointer-events:none;
+  }
+  .floor{
+    position:absolute; bottom:0;
+    width:54%; height:100%;
+    transform-origin:50% 100%;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 100%),
+      repeating-linear-gradient(180deg, rgba(0,0,0,0.14) 0 2px, transparent 2px 22px),
+      linear-gradient(180deg, #34431f 0%, #2a2415 26%, #1c160d 62%, #100c07 100%);
+    box-shadow: 0 0 60px 10px rgba(0,0,0,0.5) inset;
+    pointer-events:none;
+    transition: transform 950ms cubic-bezier(.4,0,.2,1), opacity 850ms ease 450ms, filter 950ms ease;
+  }
+  .floor::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image: var(--noise-coarse);
+    opacity:0.22;
+    mix-blend-mode:overlay;
+  }
+  .floor::after{
+    content:"";
+    position:absolute; top:0; left:0; right:0; height:9%;
+    background: repeating-linear-gradient(90deg, #566d3c 0 4px, #46592f 4px 8px);
+    box-shadow:0 2px 4px rgba(0,0,0,0.4);
+  }
+  .floor.left{ left:-8%; }
+  .floor.right{ right:-8%; }
+  .floor.open.left{
+    transform: rotateX(30deg) translateX(-46%) translateY(4%);
+    opacity:0;
+    filter:brightness(0.4);
+  }
+  .floor.open.right{
+    transform: rotateX(30deg) translateX(46%) translateY(4%);
+    opacity:0;
+    filter:brightness(0.4);
+  }
+
+  .graves{
+    position:absolute; left:0; right:0;
+    bottom:47%;
+    height:16%;
+    pointer-events:none;
+    transition: opacity 700ms ease;
+  }
+  .grave{
+    position:absolute; bottom:0;
+    width:9%; max-width:34px; height:70%;
+    background:linear-gradient(160deg,#6d6f63,#2c2e28);
+    border-radius:40% 40% 4px 4px/60% 60% 4px 4px;
+    box-shadow:0 6px 10px rgba(0,0,0,0.5);
+  }
+  .grave::before{ content:""; position:absolute; inset:0; background-image:var(--noise); opacity:0.18; mix-blend-mode:overlay; border-radius:inherit; }
+  .cross{ position:absolute; bottom:0; width:3px; height:60%; background:#141510; }
+  .cross::before{ content:""; position:absolute; top:22%; left:-7px; width:17px; height:3px; background:#141510; }
+
+  .fog{
+    pointer-events:none;
+    position:absolute; left:-25%; width:150%;
+    bottom:0; height:24%;
+    background:linear-gradient(180deg, rgba(190,196,200,0) 0%, rgba(190,196,200,0.16) 55%, rgba(190,196,200,0.3) 100%);
+    filter:blur(6px);
+    animation: drift 22s ease-in-out infinite alternate;
+    transition:opacity 700ms ease;
+  }
+  .fog.two{ bottom:6%; height:14%; opacity:0.55; animation-duration:31s; animation-direction:alternate-reverse; }
+  @keyframes drift{ 0%{transform:translateX(-3%);} 100%{transform:translateX(4%);} }
+
+  .firefly{
+    pointer-events:none;
+    position:absolute;
+    width:5px; height:5px; border-radius:50%;
+    background:radial-gradient(circle, #d9c98a 0%, rgba(217,201,138,0) 70%);
+    box-shadow:0 0 8px 3px rgba(217,201,138,0.5);
+    animation: hover 6s ease-in-out infinite;
+    opacity:0.85;
+  }
+  @keyframes hover{
+    0%,100%{ transform:translate(0,0); }
+    50%{ transform:translate(6px,-14px); }
+  }
+
+  /* ================= the tombstone ================= */
+  .yard{
+    position:absolute; left:50%; top:50%;
+    transform:translate(-50%,-50%);
+    width:min(92%, 380px);
+    max-height:92vh;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    z-index:5;
+    scrollbar-width:thin;
+  }
+  .yard::-webkit-scrollbar{ width:6px; }
+  .yard::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.15); border-radius:3px; }
+
+  .stone{
+    position:relative;
+    padding:32px 24px 24px;
+    border-radius:50% 50% 6% 6%/30% 30% 4% 4%;
+    background:
+      radial-gradient(120% 90% at 30% 12%, rgba(255,255,255,0.14), rgba(255,255,255,0) 45%),
+      linear-gradient(160deg, var(--stone-1) 0%, var(--stone-2) 48%, var(--stone-3) 100%);
+    box-shadow:
+      inset 0 0 3px rgba(0,0,0,0.5),
+      inset 0 -14px 30px rgba(0,0,0,0.45),
+      0 40px 50px -14px rgba(0,0,0,0.8),
+      0 4px 0 rgba(0,0,0,0.3);
+  }
+  .stone::before{
+    content:"";
+    pointer-events:none;
+    position:absolute; inset:0;
+    border-radius:inherit;
+    background-image: var(--noise);
+    opacity:0.16;
+    mix-blend-mode:overlay;
+  }
+  .stone::after{
+    content:"";
+    pointer-events:none;
+    position:absolute; inset:0;
+    border-radius:inherit;
+    background:
+      radial-gradient(60px 90px at 14% 82%, rgba(92,114,72,0.35), transparent 70%),
+      radial-gradient(40px 60px at 84% 20%, rgba(92,114,72,0.22), transparent 70%);
+    mix-blend-mode:multiply;
+  }
+
+  .crack{ position:absolute; width:1px; background:rgba(0,0,0,0.32); }
+  .crack.a{ top:16%; left:14%; height:52%; transform:rotate(7deg); }
+  .crack.b{ top:32%; right:17%; height:34%; transform:rotate(-9deg); }
+  .crack.c{ top:56%; left:24%; height:16%; transform:rotate(18deg); }
+
+  .rip{
+    position:relative; text-align:center; margin:0 0 8px;
+    font-family:'Cinzel', serif;
+    font-size:11px; letter-spacing:0.4em;
+    color:rgba(0,0,0,0.5);
+  }
+  h1.epitaph{
+    position:relative; margin:0; text-align:center;
+    font-family:'Cinzel', serif; font-weight:600;
+    font-size:clamp(18px,5.2vw,23px);
+    letter-spacing:0.03em;
+    color:rgba(15,14,10,0.68);
+    text-shadow:0 1px 0 rgba(255,255,255,0.18);
+  }
+  .hint{
+    position:relative; text-align:center; margin:4px 0 16px;
+    font-size:13px; font-style:italic; color:rgba(0,0,0,0.42);
+  }
+  .divider{
+    position:relative; width:58%; height:1px; margin:0 auto 16px;
+    background:linear-gradient(90deg, transparent, rgba(0,0,0,0.35), transparent);
+  }
+
+  .lock{
+    position:relative;
+    background:linear-gradient(160deg,#26271f,#0d0d08);
+    border-radius:14px;
+    padding:13px 14px 15px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.9), inset 0 -1px 0 rgba(255,255,255,0.04), 0 8px 18px rgba(0,0,0,0.55);
+  }
+  .display{
+    background:#040403; border-radius:6px; padding:9px 10px; margin-bottom:10px;
+    display:flex; justify-content:center; gap:14px;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.95);
+  }
+  .digit-slot{
+    width:18px; text-align:center;
+    font-family:'IBM Plex Mono', monospace; font-size:20px;
+    color:var(--amber); text-shadow:0 0 9px rgba(201,154,86,0.6);
+    min-height:23px;
+  }
+  .keys{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .key{
+    appearance:none; border:none; border-radius:8px;
+    background:linear-gradient(160deg,#40412f,#221f14);
+    color:var(--ink); font-family:'IBM Plex Mono', monospace; font-size:15px;
+    padding:10px 0;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.07);
+    cursor:pointer;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  .key:active{ transform:translateY(2px); box-shadow:0 0 0 rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06); }
+  .key:focus-visible{ outline:2px solid var(--amber); outline-offset:2px; }
+  .key.zero{ grid-column:2; }
+  .key.clear, .key.enter{ font-family:'Cormorant Garamond', serif; font-size:13px; letter-spacing:0.05em; }
+
+  .status{
+    text-align:center; min-height:17px; margin-top:10px;
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.12em;
+    color:rgba(0,0,0,0.42);
+  }
+  .status.wrong{ color:#8a3030; }
+
+  .fade-out{ opacity:0 !important; }
+
+  /* ================= post-processing overlays: grain, vignette, blackout ================= */
+  .grain{
+    position:fixed; inset:-50%;
+    width:200%; height:200%;
+    background-image:var(--noise);
+    opacity:0.05;
+    mix-blend-mode:overlay;
+    pointer-events:none;
+    z-index:8;
+    animation: grain-shift 0.6s steps(4) infinite;
+  }
+  @keyframes grain-shift{
+    0%{ transform:translate(0,0); }
+    25%{ transform:translate(-2%,1%); }
+    50%{ transform:translate(1%,-2%); }
+    75%{ transform:translate(-1%,-1%); }
+    100%{ transform:translate(0,0); }
+  }
+
+  .vignette-static{
+    position:fixed; inset:0; z-index:9;
+    background:radial-gradient(ellipse at 50% 42%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 100%);
+    pointer-events:none;
+  }
+
+  .vignette{
+    position:fixed; inset:0; z-index:10;
+    background:radial-gradient(ellipse at 50% 38%, rgba(0,0,0,0) 15%, rgba(0,0,0,0.97) 100%);
+    opacity:0; pointer-events:none;
+    transition: opacity 1.7s ease;
+  }
+  .vignette.show{ opacity:1; }
+
+  .blackout{
+    position:fixed; inset:0; z-index:11;
+    background:#000; opacity:0; pointer-events:none;
+    transition: opacity 700ms ease;
+  }
+  .blackout.show{ opacity:1; pointer-events:auto; }
+
+  .rise{
+    position:fixed; inset:0; z-index:12;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none;
+    transition: opacity 1.4s ease;
+  }
+  .rise.show{ opacity:1; pointer-events:auto; }
+
+  .go-btn{
+    font-family:'Cinzel', serif; font-size:13px; letter-spacing:0.2em;
+    color:var(--ink); background:transparent;
+    border:1px solid #7d8175; border-radius:2px;
+    padding:14px 30px; cursor:pointer;
+    transition: background 0.25s ease, color 0.25s ease, letter-spacing 0.25s ease;
+  }
+  .go-btn:hover{ background:#7d8175; color:#0c0c0a; letter-spacing:0.26em; }
+
+  @media (prefers-reduced-motion: reduce){
+    #world.tilt, #world.fall, .floor{ transition-duration:0.2s; }
+    .vignette, .blackout, .rise{ transition-duration:0.2s; }
+    .grain{ animation:none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="world">
+  <div class="sky"></div>
+  <div class="stars"></div>
+  <div class="hill back"></div>
+  <div class="hill"></div>
+  <div class="tree"><i></i><i></i><i></i><i></i></div>
+
+  <div class="floor-wrap">
+    <div class="floor left" id="floorLeft"></div>
+    <div class="floor right" id="floorRight"></div>
+  </div>
+
+  <div class="graves" id="graves">
+    <div class="grave" style="left:5%;"></div>
+    <div class="cross" style="left:17%; bottom:47%;"></div>
+    <div class="grave" style="left:82%; width:7%;"></div>
+    <div class="cross" style="left:72%; bottom:47%;"></div>
+  </div>
+
+  <div class="fog"></div>
+  <div class="fog two"></div>
+
+  <div class="firefly" style="left:22%; top:58%; animation-delay:0s;"></div>
+  <div class="firefly" style="left:70%; top:52%; animation-delay:1.4s;"></div>
+  <div class="firefly" style="left:40%; top:66%; animation-delay:2.6s;"></div>
+  <div class="firefly" style="left:80%; top:64%; animation-delay:0.8s;"></div>
+
+  <div class="yard">
+    <div class="stone" id="stone">
+      <div class="crack a"></div>
+      <div class="crack b"></div>
+      <div class="crack c"></div>
+
+      <p class="rip">R · I · P</p>
+      <h1 class="epitaph">Qlklo, vhswhp, xqxp, qlklo</h1>
+      <p class="hint">сдвиг на 3</p>
+      <div class="divider"></div>
+
+      <div class="lock">
+        <div class="display" id="display">
+          <span class="digit-slot" data-i="0"></span>
+          <span class="digit-slot" data-i="1"></span>
+          <span class="digit-slot" data-i="2"></span>
+          <span class="digit-slot" data-i="3"></span>
+        </div>
+        <div class="keys" id="keys">
+          <button class="key" data-d="1">1</button>
+          <button class="key" data-d="2">2</button>
+          <button class="key" data-d="3">3</button>
+          <button class="key" data-d="4">4</button>
+          <button class="key" data-d="5">5</button>
+          <button class="key" data-d="6">6</button>
+          <button class="key" data-d="7">7</button>
+          <button class="key" data-d="8">8</button>
+          <button class="key" data-d="9">9</button>
+          <button class="key clear" id="clearBtn">стереть</button>
+          <button class="key zero" data-d="0">0</button>
+          <button class="key enter" id="enterBtn">войти</button>
+        </div>
+        <p class="status" id="status"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grain"></div>
+<div class="vignette-static"></div>
+<div class="vignette" id="vignette"></div>
+<div class="blackout" id="blackout"></div>
+<div class="rise" id="rise">
+  <button class="go-btn" id="goBtn">перейти</button>
+</div>
+
+<script>
+  const CODE = "0710";
+  let entered = "";
+  const slots = Array.from(document.querySelectorAll('.digit-slot'));
+  const statusEl = document.getElementById('status');
+  const worldEl = document.getElementById('world');
+  const floorLeft = document.getElementById('floorLeft');
+  const floorRight = document.getElementById('floorRight');
+  const graves = document.getElementById('graves');
+  const vignetteEl = document.getElementById('vignette');
+  const blackoutEl = document.getElementById('blackout');
+  const riseEl = document.getElementById('rise');
+  const goBtn = document.getElementById('goBtn');
+
+  function render(){
+    slots.forEach((s,i)=>{ s.textContent = entered[i] ? entered[i] : ''; });
+  }
+
+  document.getElementById('keys').addEventListener('click', (e)=>{
+    const btn = e.target.closest('.key');
+    if(!btn) return;
+    if(btn.id === 'clearBtn'){
+      entered = "";
+      statusEl.textContent = "";
+      statusEl.classList.remove('wrong');
+      render();
+      return;
+    }
+    if(btn.id === 'enterBtn'){ checkCode(); return; }
+    if(entered.length < 4 && btn.dataset.d !== undefined){
+      entered += btn.dataset.d;
+      render();
+      if(entered.length === 4) checkCode();
+    }
+  });
+
+  function checkCode(){
+    if(entered.length < 4) return;
+    if(entered === CODE){
+      statusEl.classList.remove('wrong');
+      statusEl.textContent = "земля разверзлась";
+
+      // 1) head tilts down — the ground rushes up into view
+      worldEl.classList.add('tilt');
+
+      // 2) the ground splits open right beneath us
+      setTimeout(()=>{
+        floorLeft.classList.add('open');
+        floorRight.classList.add('open');
+        graves.classList.add('fade-out');
+        vignetteEl.classList.add('show');
+      }, 800);
+
+      // 3) sharp dive: the ground and the tombstone fly upward, past us — we keep sinking
+      setTimeout(()=>{ worldEl.classList.add('fall'); }, 1300);
+      setTimeout(()=>{ blackoutEl.classList.add('show'); }, 3050);
+
+      // 4) we're still sinking a while longer in the dark before the button waits for us
+      setTimeout(()=>{ riseEl.classList.add('show'); }, 4400);
+
+    } else {
+      statusEl.classList.add('wrong');
+      statusEl.textContent = "неверно";
+      setTimeout(()=>{
+        entered = "";
+        render();
+        statusEl.textContent = "";
+        statusEl.classList.remove('wrong');
+      }, 700);
+    }
+  }
+
+  goBtn.addEventListener('click', ()=>{
+    window.location.href = 'https://markbartolomeev-blip.github.io/tulenoween_-Expergefactio/';
+  });
+
+  render();
+</script>
+</body>
+</html>
