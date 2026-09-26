@@ -30,7 +30,6 @@
     position: relative;
   }
 
-  /* Лёгкое затемнение для читаемости текста */
   body::before {
     content: '';
     position: absolute;
@@ -99,7 +98,6 @@
     margin-top: 4px;
   }
 
-  /* Надпись под таймером — меньше и с многоточием */
   .subtitle {
     font-size: clamp(14px, 2vw, 24px);
     color: #ffd27f;
@@ -111,9 +109,93 @@
     font-weight: bold;
     opacity: 0.9;
   }
+
+  /* ==== Экран загрузки ==== */
+  .loader {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: radial-gradient(ellipse at center, #1a0d00 0%, #000 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+  }
+
+  .loader.hidden {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .loader-pumpkin {
+    width: clamp(90px, 14vw, 160px);
+    height: auto;
+    filter: drop-shadow(0 0 25px rgba(255, 140, 0, 0.9))
+            drop-shadow(0 0 50px rgba(255, 80, 0, 0.6));
+    animation: spinPulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes spinPulse {
+    0%   { transform: scale(1)    rotate(0deg);   opacity: 0.85; }
+    50%  { transform: scale(1.12) rotate(180deg); opacity: 1;    }
+    100% { transform: scale(1)    rotate(360deg); opacity: 0.85; }
+  }
+
+  .loader-text {
+    font-size: clamp(14px, 2vw, 22px);
+    color: #ffb45c;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: 0 0 12px rgba(255,120,0,0.9);
+    animation: blink 1.4s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 0.45; }
+    50%      { opacity: 1;    }
+  }
+
+  .loader-bar {
+    width: clamp(200px, 45vw, 400px);
+    height: 8px;
+    border-radius: 6px;
+    background: rgba(255, 140, 0, 0.15);
+    border: 1px solid rgba(255, 150, 40, 0.5);
+    overflow: hidden;
+    box-shadow: 0 0 15px rgba(255,120,0,0.4);
+  }
+
+  .loader-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ff6a00, #ffb45c, #ff6a00);
+    background-size: 200% 100%;
+    border-radius: 6px;
+    box-shadow: 0 0 15px rgba(255,140,0,0.9);
+    animation: shimmer 1.5s linear infinite;
+    transition: width 0.3s ease;
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: 0% 0; }
+    100% { background-position: 200% 0; }
+  }
 </style>
 </head>
 <body>
+
+  <!-- Экран загрузки -->
+  <div class="loader" id="loader">
+    <img class="loader-pumpkin" src="https://i.postimg.cc/QCg9tGCW/pumpkin-1.png" alt="Загрузка">
+    <div class="loader-text">Загрузка...</div>
+    <div class="loader-bar">
+      <div class="loader-bar-fill" id="loaderFill"></div>
+    </div>
+  </div>
+
+  <!-- Основной контент -->
   <div class="container">
     <img class="pumpkin" src="https://i.postimg.cc/QCg9tGCW/pumpkin-1.png" alt="Тыква">
     <div class="timer" id="timer">
@@ -126,8 +208,43 @@
   </div>
 
   <script>
-    // Дата окончания: 27 сентября 2026, 18:00 (по локальному времени браузера)
-    const targetDate = new Date(2026, 8, 27, 18, 0, 0).getTime(); // месяц 8 = сентябрь
+    /* ===== Экран загрузки ===== */
+    const loader = document.getElementById('loader');
+    const loaderFill = document.getElementById('loaderFill');
+    const bgImage = new Image();
+    const pumpkinImage = new Image();
+
+    let loadedCount = 0;
+    const totalAssets = 2;
+
+    function updateProgress() {
+      loadedCount++;
+      const percent = Math.round((loadedCount / totalAssets) * 100);
+      loaderFill.style.width = percent + '%';
+
+      if (loadedCount >= totalAssets) {
+        // Небольшая задержка, чтобы прогресс успел дорисоваться
+        setTimeout(() => {
+          loader.classList.add('hidden');
+        }, 450);
+      }
+    }
+
+    bgImage.onload = updateProgress;
+    bgImage.onerror = updateProgress;
+    bgImage.src = 'https://i.postimg.cc/7LCNLhkP/98C10CB2-6944-4C7D-B55A-64D129F1839E.jpg';
+
+    pumpkinImage.onload = updateProgress;
+    pumpkinImage.onerror = updateProgress;
+    pumpkinImage.src = 'https://i.postimg.cc/QCg9tGCW/pumpkin-1.png';
+
+    /* Страховка: через 8 секунд принудительно скрыть лоадер */
+    setTimeout(() => {
+      loader.classList.add('hidden');
+    }, 8000);
+
+    /* ===== Таймер ===== */
+    const targetDate = new Date(2026, 8, 27, 18, 0, 0).getTime(); // 27.09.2026 18:00
 
     function pad(n) { return String(n).padStart(2, '0'); }
 
