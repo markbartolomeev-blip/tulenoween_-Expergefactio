@@ -20,12 +20,13 @@
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    display: flex;
+    display: none;                 /* включается после лоадера */
     flex-direction: column;
     align-items: center;
     justify-content: center;
     z-index: 10;
   }
+  #stage-timer.visible { display: flex; }
   #stage-timer::before {
     content: '';
     position: absolute; inset: 0;
@@ -97,7 +98,7 @@
     gap: 30px;
     transition: opacity 0.8s ease, visibility 0.8s ease;
   }
-  .loader.hidden { opacity: 0; visibility: hidden; }
+  .loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
   .loader-pumpkin {
     width: clamp(90px, 14vw, 160px); height: auto;
     filter: drop-shadow(0 0 25px rgba(255, 140, 0, 0.9))
@@ -115,10 +116,18 @@
     text-transform: uppercase;
     text-shadow: 0 0 12px rgba(255,120,0,0.9);
     animation: blink 1.4s ease-in-out infinite;
+    transition: opacity 0.4s ease;
+    text-align: center;
   }
   @keyframes blink {
     0%, 100% { opacity: 0.45; }
     50%      { opacity: 1;    }
+  }
+  .loader-text.done {
+    animation: none;
+    opacity: 1;
+    color: #ffd27f;
+    text-shadow: 0 0 20px rgba(255,180,0,1);
   }
   .loader-bar {
     width: clamp(200px, 45vw, 400px); height: 8px;
@@ -127,7 +136,9 @@
     border: 1px solid rgba(255, 150, 40, 0.5);
     overflow: hidden;
     box-shadow: 0 0 15px rgba(255,120,0,0.4);
+    transition: opacity 0.4s ease;
   }
+  .loader-bar.hidden { opacity: 0; }
   .loader-bar-fill {
     height: 100%; width: 0%;
     background: linear-gradient(90deg, #ff6a00, #ffb45c, #ff6a00);
@@ -142,7 +153,40 @@
     100% { background-position: 200% 0; }
   }
 
-  /* ============ ЭКРАН 2: ТЫКВА / ПРОБУЖДЕНИЕ ============ */
+  /* Кнопка "Продолжить" */
+  #continue-btn {
+    display: none;
+    padding: 16px 46px;
+    font-family: 'Georgia', serif;
+    font-size: clamp(16px, 2.2vw, 22px);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #ffe0a3;
+    background: rgba(30, 12, 0, 0.7);
+    border: 2px solid rgba(255, 150, 40, 0.85);
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 0 0 25px rgba(255, 120, 0, 0.7),
+                inset 0 0 20px rgba(255, 100, 0, 0.25);
+    text-shadow: 0 0 12px rgba(255,140,0,0.9);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #continue-btn.visible {
+    display: inline-block;
+    animation: btnAppear 0.8s ease forwards;
+  }
+  #continue-btn:active {
+    transform: scale(0.95);
+    box-shadow: 0 0 40px rgba(255, 180, 0, 1),
+                inset 0 0 30px rgba(255, 120, 0, 0.5);
+  }
+  @keyframes btnAppear {
+    0%   { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ============ ЭКРАН 2: ТЫКВА ============ */
   #stage-pumpkin {
     display: none;
     position: fixed; inset: 0;
@@ -287,8 +331,9 @@
   <!-- ЗАГРУЗЧИК -->
   <div class="loader" id="loader">
     <img class="loader-pumpkin" src="https://i.postimg.cc/QCg9tGCW/pumpkin-1.png" alt="Загрузка">
-    <div class="loader-text">Загрузка...</div>
-    <div class="loader-bar"><div class="loader-bar-fill" id="loaderFill"></div></div>
+    <div class="loader-text" id="loaderText">Загрузка...</div>
+    <div class="loader-bar" id="loaderBar"><div class="loader-bar-fill" id="loaderFill"></div></div>
+    <button id="continue-btn">Продолжить</button>
   </div>
 
   <!-- ЭКРАН 1: ТАЙМЕР -->
@@ -319,36 +364,63 @@
     <img id="slice" src="https://i.postimg.cc/NF89MqFL/pumpkin-slice.png" alt="">
   </div>
 
+  <!-- МУЗЫКА -->
+  <audio id="bg-music" loop preload="auto">
+    <source src="https://www.image2url.com/r2/default/audio/1790487611258-1aaad7f4-f971-4b82-8e10-209365425039.mp3" type="audio/mpeg">
+  </audio>
+
 <script>
+/* ============================================================
+   МУЗЫКА
+   ============================================================ */
+const bgMusic = document.getElementById("bg-music");
+bgMusic.volume = 1.0;
+
 /* ============================================================
    ЭКРАН 1: ЗАГРУЗКА + ТАЙМЕР
    ============================================================ */
-
-/* ===== Загрузка картинок ===== */
 const loader = document.getElementById('loader');
 const loaderFill = document.getElementById('loaderFill');
+const loaderText = document.getElementById('loaderText');
+const loaderBar = document.getElementById('loaderBar');
+const continueBtn = document.getElementById('continue-btn');
 
 const preloadImages = [
-  'https://i.postimg.cc/7LCNLhkP/98C10CB2-6944-4C7D-B55A-64D129F1839E.jpg',  // фон
-  'https://i.postimg.cc/QCg9tGCW/pumpkin-1.png',                              // стадия 1
-  'https://i.postimg.cc/MH0MT2Hf/pumpkin-2.png',                              // стадия 2
-  'https://i.postimg.cc/cC7gHyCg/pumpkin-3.png',                              // стадия 3
-  'https://i.postimg.cc/hv8zjWvd/pumpkin-4.png',                              // стадия 4
-  'https://i.postimg.cc/yxhgd4x9/pumpkin-5.png',                              // стадия 5
-  'https://i.postimg.cc/NMWghw9H/pumpkin-miti.png',                           // мити
-  'https://i.postimg.cc/NF89MqFL/pumpkin-slice.png'                           // кусок
+  'https://i.postimg.cc/7LCNLhkP/98C10CB2-6944-4C7D-B55A-64D129F1839E.jpg',
+  'https://i.postimg.cc/QCg9tGCW/pumpkin-1.png',
+  'https://i.postimg.cc/MH0MT2Hf/pumpkin-2.png',
+  'https://i.postimg.cc/cC7gHyCg/pumpkin-3.png',
+  'https://i.postimg.cc/hv8zjWvd/pumpkin-4.png',
+  'https://i.postimg.cc/yxhgd4x9/pumpkin-5.png',
+  'https://i.postimg.cc/NMWghw9H/pumpkin-miti.png',
+  'https://i.postimg.cc/NF89MqFL/pumpkin-slice.png'
 ];
 
 let loadedCount = 0;
 const totalAssets = preloadImages.length;
+let allLoaded = false;
 
 function updateProgress() {
   loadedCount++;
   const percent = Math.round((loadedCount / totalAssets) * 100);
   loaderFill.style.width = percent + '%';
-  if (loadedCount >= totalAssets) {
-    setTimeout(() => loader.classList.add('hidden'), 450);
+
+  if (loadedCount >= totalAssets && !allLoaded) {
+    allLoaded = true;
+    onAllLoaded();
   }
+}
+
+function onAllLoaded() {
+  // Меняем текст на «Загрузка завершена»
+  loaderText.textContent = "Загрузка завершена";
+  loaderText.classList.add("done");
+  loaderBar.classList.add("hidden");
+
+  // Показываем кнопку «Продолжить»
+  setTimeout(() => {
+    continueBtn.classList.add("visible");
+  }, 400);
 }
 
 preloadImages.forEach(src => {
@@ -357,11 +429,35 @@ preloadImages.forEach(src => {
   img.src = src;
 });
 
-// Страховка
-setTimeout(() => loader.classList.add('hidden'), 8000);
+/* Страховка: через 12 секунд — всё равно показать кнопку */
+setTimeout(() => {
+  if (!allLoaded) {
+    allLoaded = true;
+    onAllLoaded();
+  }
+}, 12000);
 
-/* ===== Таймер ===== */
-const targetDate = new Date(2026, 8, 27, 18, 0, 0).getTime(); // 27.09.2026 18:00
+/* ===== Кнопка «Продолжить» ===== */
+continueBtn.addEventListener("click", () => {
+  // Запускаем музыку (браузер разрешает, т.к. это действие пользователя)
+  bgMusic.play().catch(e => console.warn("Music error:", e));
+
+  // Прячем лоадер
+  loader.classList.add("hidden");
+
+  // Показываем экран таймера
+  document.getElementById('stage-timer').classList.add('visible');
+
+  // Запускаем таймер
+  updateTimer();
+  timerInterval = setInterval(updateTimer, 1000);
+});
+
+/* ============================================================
+   ТАЙМЕР
+   ============================================================ */
+const targetDate = new Date(2026, 8, 27, 18, 0, 0).getTime(); // 27.09.2026, 18:00
+let timerInterval = null;
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
@@ -374,7 +470,6 @@ function updateTimer() {
     document.getElementById('hours').textContent = '00';
     document.getElementById('minutes').textContent = '00';
     document.getElementById('seconds').textContent = '00';
-    // Таймер закончился — переключаемся на второй этап
     switchToPumpkinStage();
     return;
   }
@@ -389,9 +484,6 @@ function updateTimer() {
   document.getElementById('minutes').textContent = pad(minutes);
   document.getElementById('seconds').textContent = pad(seconds);
 }
-
-updateTimer();
-const timerInterval = setInterval(updateTimer, 1000);
 
 /* ===== Переключение на экран с тыквой ===== */
 let pumpkinStageStarted = false;
@@ -408,12 +500,12 @@ function switchToPumpkinStage() {
     timerStage.style.display = 'none';
     const pumpkinStage = document.getElementById('stage-pumpkin');
     pumpkinStage.classList.add('visible');
-    initPumpkinStage();   // запускаем всю логику с тыквой
+    initPumpkinStage();
   }, 1000);
 }
 
 /* ============================================================
-   ЭКРАН 2: ТЫКВА И ПРОБУЖДЕНИЕ
+   ЭКРАН 2: ТЫКВА
    ============================================================ */
 const SYNC_URL = "https://tulenoween-default-rtdb.firebaseio.com";
 
@@ -425,7 +517,6 @@ const STAGES = [
   "https://i.postimg.cc/yxhgd4x9/pumpkin-5.png"
 ];
 const MITI_IMG  = "https://i.postimg.cc/NMWghw9H/pumpkin-miti.png";
-const SLICE_IMG = "https://i.postimg.cc/NF89MqFL/pumpkin-slice.png";
 
 const LS_KEY   = "pumpkin_stage_v1";
 const USED_KEY = "pumpkin_used_v4";
@@ -560,7 +651,6 @@ function updateAmbientState() {
   }
 }
 
-/* ===== Мити (только на финале) ===== */
 function mitiFlash() {
   if (holding) return;
   if (currentStage < MAX_STAGE) return;
