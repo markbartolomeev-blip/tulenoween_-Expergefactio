@@ -2,14 +2,10 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Пора Закончить спасение</title>
 <style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body {
     height: 100%;
@@ -17,61 +13,46 @@
     font-family: 'Georgia', 'Times New Roman', serif;
   }
 
-  body {
+  /* ============ ЭКРАН 1: ТАЙМЕР ============ */
+  #stage-timer {
+    position: fixed; inset: 0;
     background-image: url('https://i.postimg.cc/7LCNLhkP/98C10CB2-6944-4C7D-B55A-64D129F1839E.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    background-attachment: fixed;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    position: relative;
+    z-index: 10;
   }
-
-  body::before {
+  #stage-timer::before {
     content: '';
-    position: absolute;
-    inset: 0;
+    position: absolute; inset: 0;
     background: radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%);
     pointer-events: none;
-    z-index: 0;
   }
-
-  .container {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 30px;
-    padding: 20px;
-    text-align: center;
+  #stage-timer .container {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 30px;
+    padding: 20px; text-align: center;
   }
-
-  .pumpkin {
-    width: clamp(180px, 30vw, 380px);
-    height: auto;
+  #stage-timer .pumpkin {
+    width: clamp(180px, 30vw, 380px); height: auto;
     filter: drop-shadow(0 0 30px rgba(255, 140, 0, 0.8))
             drop-shadow(0 0 60px rgba(255, 80, 0, 0.5));
     animation: float 4s ease-in-out infinite;
   }
-
   @keyframes float {
     0%, 100% { transform: translateY(0); }
     50%      { transform: translateY(-12px); }
   }
-
-  .timer {
-    display: flex;
-    gap: clamp(8px, 2vw, 20px);
-    flex-wrap: wrap;
-    justify-content: center;
+  #stage-timer .timer {
+    display: flex; gap: clamp(8px, 2vw, 20px);
+    flex-wrap: wrap; justify-content: center;
   }
-
-  .timer-box {
+  #stage-timer .timer-box {
     background: rgba(20, 10, 0, 0.55);
     border: 2px solid rgba(255, 150, 40, 0.7);
     border-radius: 12px;
@@ -81,95 +62,74 @@
                 inset 0 0 15px rgba(255, 100, 0, 0.25);
     backdrop-filter: blur(4px);
   }
-
-  .timer-num {
+  #stage-timer .timer-num {
     font-size: clamp(26px, 5vw, 56px);
-    color: #ffe0a3;
-    font-weight: bold;
+    color: #ffe0a3; font-weight: bold;
     text-shadow: 0 0 15px rgba(255,140,0,0.95);
     font-variant-numeric: tabular-nums;
   }
-
-  .timer-label {
+  #stage-timer .timer-label {
     font-size: clamp(10px, 1.2vw, 15px);
-    color: #ffb45c;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-top: 4px;
+    color: #ffb45c; text-transform: uppercase;
+    letter-spacing: 2px; margin-top: 4px;
   }
-
-  .subtitle {
+  #stage-timer .subtitle {
     font-size: clamp(14px, 2vw, 24px);
-    color: #ffd27f;
-    letter-spacing: 2px;
+    color: #ffd27f; letter-spacing: 2px;
     text-transform: uppercase;
     text-shadow: 0 0 8px rgba(255,120,0,0.8),
                  0 0 18px rgba(255,60,0,0.5),
                  1px 1px 4px rgba(0,0,0,0.9);
-    font-weight: bold;
-    opacity: 0.9;
+    font-weight: bold; opacity: 0.9;
+  }
+  #stage-timer.fade-out {
+    transition: opacity 1s ease;
+    opacity: 0;
+    pointer-events: none;
   }
 
-  /* ==== Экран загрузки ==== */
+  /* ============ ЗАГРУЗЧИК ============ */
   .loader {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
+    position: fixed; inset: 0; z-index: 9999;
     background: radial-gradient(ellipse at center, #1a0d00 0%, #000 100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
     gap: 30px;
     transition: opacity 0.8s ease, visibility 0.8s ease;
   }
-
-  .loader.hidden {
-    opacity: 0;
-    visibility: hidden;
-  }
-
+  .loader.hidden { opacity: 0; visibility: hidden; }
   .loader-pumpkin {
-    width: clamp(90px, 14vw, 160px);
-    height: auto;
+    width: clamp(90px, 14vw, 160px); height: auto;
     filter: drop-shadow(0 0 25px rgba(255, 140, 0, 0.9))
             drop-shadow(0 0 50px rgba(255, 80, 0, 0.6));
     animation: spinPulse 1.8s ease-in-out infinite;
   }
-
   @keyframes spinPulse {
     0%   { transform: scale(1)    rotate(0deg);   opacity: 0.85; }
     50%  { transform: scale(1.12) rotate(180deg); opacity: 1;    }
     100% { transform: scale(1)    rotate(360deg); opacity: 0.85; }
   }
-
   .loader-text {
     font-size: clamp(14px, 2vw, 22px);
-    color: #ffb45c;
-    letter-spacing: 4px;
+    color: #ffb45c; letter-spacing: 4px;
     text-transform: uppercase;
     text-shadow: 0 0 12px rgba(255,120,0,0.9);
     animation: blink 1.4s ease-in-out infinite;
   }
-
   @keyframes blink {
     0%, 100% { opacity: 0.45; }
     50%      { opacity: 1;    }
   }
-
   .loader-bar {
-    width: clamp(200px, 45vw, 400px);
-    height: 8px;
+    width: clamp(200px, 45vw, 400px); height: 8px;
     border-radius: 6px;
     background: rgba(255, 140, 0, 0.15);
     border: 1px solid rgba(255, 150, 40, 0.5);
     overflow: hidden;
     box-shadow: 0 0 15px rgba(255,120,0,0.4);
   }
-
   .loader-bar-fill {
-    height: 100%;
-    width: 0%;
+    height: 100%; width: 0%;
     background: linear-gradient(90deg, #ff6a00, #ffb45c, #ff6a00);
     background-size: 200% 100%;
     border-radius: 6px;
@@ -177,102 +137,536 @@
     animation: shimmer 1.5s linear infinite;
     transition: width 0.3s ease;
   }
-
   @keyframes shimmer {
     0%   { background-position: 0% 0; }
     100% { background-position: 200% 0; }
+  }
+
+  /* ============ ЭКРАН 2: ТЫКВА / ПРОБУЖДЕНИЕ ============ */
+  #stage-pumpkin {
+    display: none;
+    position: fixed; inset: 0;
+    touch-action: none; user-select: none;
+    -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+    background: #0a0510;
+    overflow: hidden;
+  }
+  #stage-pumpkin.visible { display: block; }
+
+  #dark-bg {
+    position: fixed; inset: 0;
+    background-image: url("https://i.postimg.cc/7LCNLhkP/98C10CB2-6944-4C7D-B55A-64D129F1839E.jpg");
+    background-size: cover;
+    background-position: center;
+    background-color: #0a0510;
+    z-index: 0;
+  }
+
+  #swirl {
+    position: fixed; left: 50%; top: 50%;
+    width: 200vmax; height: 200vmax;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.7s ease;
+    z-index: 1; pointer-events: none;
+  }
+  #swirl.active { opacity: 1; }
+  #swirl svg {
+    width: 100%; height: 100%; display: block;
+    animation: spin 10s linear infinite;
+    transform-origin: 50% 50%;
+    filter: blur(1.5px);
+  }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  #vignette {
+    position: fixed; inset: 0;
+    background: radial-gradient(circle at center,
+      rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 55%, rgba(0,0,0,0.85) 100%);
+    pointer-events: none; z-index: 2;
+  }
+  #center-glow {
+    position: fixed; left: 50%; top: 50%;
+    width: 70vmin; height: 70vmin;
+    transform: translate(-50%,-50%);
+    background: radial-gradient(circle,
+      rgba(255,160,60,0.55) 0%,
+      rgba(180,60,255,0.25) 35%,
+      rgba(0,0,0,0) 70%);
+    opacity: 0; transition: opacity .7s ease;
+    z-index: 2; pointer-events: none; mix-blend-mode: screen;
+  }
+  #center-glow.active { opacity: 1; }
+
+  #top-text {
+    position: fixed;
+    left: 50%; top: 12%;
+    transform: translate(-50%, -20px);
+    font-family: "Georgia", "Times New Roman", serif;
+    font-size: clamp(20px, 5.5vw, 42px);
+    letter-spacing: 0.15em;
+    color: #ffffff;
+    text-shadow: 0 0 10px #fff, 0 0 25px #d8b8ff, 0 0 45px #8a4dd6;
+    opacity: 0;
+    transition: opacity 1.2s ease, transform 1.2s ease;
+    z-index: 5; pointer-events: none;
+    text-align: center; white-space: nowrap;
+    font-style: italic; font-weight: 300;
+  }
+  #top-text.show { opacity: 0.95; transform: translate(-50%, 0); }
+
+  #bottom-text {
+    position: fixed;
+    left: 50%; bottom: 10%;
+    transform: translate(-50%, 20px);
+    font-family: "Georgia", "Times New Roman", serif;
+    font-size: clamp(11px, 2.6vw, 15px);
+    letter-spacing: 0.28em;
+    color: rgba(255,255,255,0.7);
+    text-shadow: 0 0 8px rgba(216,184,255,0.7);
+    opacity: 0;
+    transition: opacity 1.5s ease 0.4s, transform 1.5s ease 0.4s;
+    z-index: 5; pointer-events: none;
+    text-align: center; text-transform: uppercase;
+    max-width: 90vw; line-height: 1.6;
+  }
+  #bottom-text.show { opacity: 0.75; transform: translate(-50%, 0); }
+
+  #stage {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 3; cursor: pointer;
+  }
+  #pumpkin {
+    width: min(72vw, 520px); height: auto; pointer-events: none;
+    filter: drop-shadow(0 0 40px #ff8c00aa);
+    transition: transform 0.25s ease, filter 0.6s ease;
+    animation: floatP 4.5s ease-in-out infinite;
+    user-select: none; -webkit-user-drag: none;
+    transform-origin: center center;
+  }
+  @keyframes floatP {
+    0%,100% { transform: translateY(0); }
+    50%     { transform: translateY(-10px); }
+  }
+
+  #pumpkin.shake {
+    animation: shake 0.35s infinite;
+    filter: drop-shadow(0 0 60px #b388ff) drop-shadow(0 0 110px #ff7a00);
+  }
+  @keyframes shake {
+    0%   { transform: translate(0,0) rotate(0deg); }
+    10%  { transform: translate(-6px, 2px) rotate(-2deg); }
+    20%  { transform: translate(7px, -3px) rotate(2.5deg); }
+    30%  { transform: translate(-5px, 3px) rotate(-2deg); }
+    40%  { transform: translate(6px, -2px) rotate(2deg); }
+    50%  { transform: translate(-7px, 2px) rotate(-2.5deg); }
+    60%  { transform: translate(5px, -3px) rotate(1.8deg); }
+    70%  { transform: translate(-6px, 3px) rotate(-2.2deg); }
+    80%  { transform: translate(7px, -2px) rotate(2.3deg); }
+    90%  { transform: translate(-4px, 2px) rotate(-1.5deg); }
+    100% { transform: translate(0,0) rotate(0deg); }
+  }
+
+  #slice {
+    position: fixed; width: min(22vw, 170px);
+    left: 50%; top: 50%;
+    transform: translate(-50%,-50%) scale(0);
+    opacity: 0; pointer-events: none; z-index: 4;
+    will-change: transform, opacity;
+  }
+  #slice.fly { animation: fly 1.3s cubic-bezier(0.2,0.6,0.3,1) forwards; }
+  @keyframes fly {
+    0%   { opacity: 1; transform: translate(-50%,-50%) scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: translate(120vw, -60vh) scale(0.4) rotate(900deg); }
   }
 </style>
 </head>
 <body>
 
-  <!-- Экран загрузки -->
+  <!-- ЗАГРУЗЧИК -->
   <div class="loader" id="loader">
     <img class="loader-pumpkin" src="https://i.postimg.cc/QCg9tGCW/pumpkin-1.png" alt="Загрузка">
     <div class="loader-text">Загрузка...</div>
-    <div class="loader-bar">
-      <div class="loader-bar-fill" id="loaderFill"></div>
+    <div class="loader-bar"><div class="loader-bar-fill" id="loaderFill"></div></div>
+  </div>
+
+  <!-- ЭКРАН 1: ТАЙМЕР -->
+  <div id="stage-timer">
+    <div class="container">
+      <img class="pumpkin" src="https://i.postimg.cc/QCg9tGCW/pumpkin-1.png" alt="Тыква">
+      <div class="timer">
+        <div class="timer-box"><div class="timer-num" id="days">00</div><div class="timer-label">Дней</div></div>
+        <div class="timer-box"><div class="timer-num" id="hours">00</div><div class="timer-label">Часов</div></div>
+        <div class="timer-box"><div class="timer-num" id="minutes">00</div><div class="timer-label">Минут</div></div>
+        <div class="timer-box"><div class="timer-num" id="seconds">00</div><div class="timer-label">Секунд</div></div>
+      </div>
+      <div class="subtitle">Пора Закончить спасение...</div>
     </div>
   </div>
 
-  <!-- Основной контент -->
-  <div class="container">
-    <img class="pumpkin" src="https://i.postimg.cc/QCg9tGCW/pumpkin-1.png" alt="Тыква">
-    <div class="timer" id="timer">
-      <div class="timer-box"><div class="timer-num" id="days">00</div><div class="timer-label">Дней</div></div>
-      <div class="timer-box"><div class="timer-num" id="hours">00</div><div class="timer-label">Часов</div></div>
-      <div class="timer-box"><div class="timer-num" id="minutes">00</div><div class="timer-label">Минут</div></div>
-      <div class="timer-box"><div class="timer-num" id="seconds">00</div><div class="timer-label">Секунд</div></div>
-    </div>
-    <div class="subtitle">Пора Закончить спасение...</div>
+  <!-- ЭКРАН 2: ТЫКВА -->
+  <div id="stage-pumpkin">
+    <div id="dark-bg"></div>
+    <div id="swirl"><svg id="swirl-svg" viewBox="0 0 2000 2000" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div id="center-glow"></div>
+    <div id="vignette"></div>
+
+    <div id="top-text">Ты Спас Его…</div>
+    <div id="bottom-text">Зови других участников,<br>нужно пробудить силу до конца</div>
+
+    <div id="stage"><img id="pumpkin" alt=""></div>
+    <img id="slice" src="https://i.postimg.cc/NF89MqFL/pumpkin-slice.png" alt="">
   </div>
 
-  <script>
-    /* ===== Экран загрузки ===== */
-    const loader = document.getElementById('loader');
-    const loaderFill = document.getElementById('loaderFill');
-    const bgImage = new Image();
-    const pumpkinImage = new Image();
+<script>
+/* ============================================================
+   ЭКРАН 1: ЗАГРУЗКА + ТАЙМЕР
+   ============================================================ */
 
-    let loadedCount = 0;
-    const totalAssets = 2;
+/* ===== Загрузка картинок ===== */
+const loader = document.getElementById('loader');
+const loaderFill = document.getElementById('loaderFill');
 
-    function updateProgress() {
-      loadedCount++;
-      const percent = Math.round((loadedCount / totalAssets) * 100);
-      loaderFill.style.width = percent + '%';
+const preloadImages = [
+  'https://i.postimg.cc/7LCNLhkP/98C10CB2-6944-4C7D-B55A-64D129F1839E.jpg',  // фон
+  'https://i.postimg.cc/QCg9tGCW/pumpkin-1.png',                              // стадия 1
+  'https://i.postimg.cc/MH0MT2Hf/pumpkin-2.png',                              // стадия 2
+  'https://i.postimg.cc/cC7gHyCg/pumpkin-3.png',                              // стадия 3
+  'https://i.postimg.cc/hv8zjWvd/pumpkin-4.png',                              // стадия 4
+  'https://i.postimg.cc/yxhgd4x9/pumpkin-5.png',                              // стадия 5
+  'https://i.postimg.cc/NMWghw9H/pumpkin-miti.png',                           // мити
+  'https://i.postimg.cc/NF89MqFL/pumpkin-slice.png'                           // кусок
+];
 
-      if (loadedCount >= totalAssets) {
-        // Небольшая задержка, чтобы прогресс успел дорисоваться
-        setTimeout(() => {
-          loader.classList.add('hidden');
-        }, 450);
-      }
+let loadedCount = 0;
+const totalAssets = preloadImages.length;
+
+function updateProgress() {
+  loadedCount++;
+  const percent = Math.round((loadedCount / totalAssets) * 100);
+  loaderFill.style.width = percent + '%';
+  if (loadedCount >= totalAssets) {
+    setTimeout(() => loader.classList.add('hidden'), 450);
+  }
+}
+
+preloadImages.forEach(src => {
+  const img = new Image();
+  img.onload = img.onerror = updateProgress;
+  img.src = src;
+});
+
+// Страховка
+setTimeout(() => loader.classList.add('hidden'), 8000);
+
+/* ===== Таймер ===== */
+const targetDate = new Date(2026, 8, 27, 18, 0, 0).getTime(); // 27.09.2026 18:00
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function updateTimer() {
+  const now = Date.now();
+  let diff = targetDate - now;
+
+  if (diff <= 0) {
+    document.getElementById('days').textContent = '00';
+    document.getElementById('hours').textContent = '00';
+    document.getElementById('minutes').textContent = '00';
+    document.getElementById('seconds').textContent = '00';
+    // Таймер закончился — переключаемся на второй этап
+    switchToPumpkinStage();
+    return;
+  }
+
+  const days    = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours   = Math.floor((diff / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((diff / (1000 * 60)) % 60);
+  const seconds = Math.floor((diff / 1000) % 60);
+
+  document.getElementById('days').textContent = pad(days);
+  document.getElementById('hours').textContent = pad(hours);
+  document.getElementById('minutes').textContent = pad(minutes);
+  document.getElementById('seconds').textContent = pad(seconds);
+}
+
+updateTimer();
+const timerInterval = setInterval(updateTimer, 1000);
+
+/* ===== Переключение на экран с тыквой ===== */
+let pumpkinStageStarted = false;
+function switchToPumpkinStage() {
+  if (pumpkinStageStarted) return;
+  pumpkinStageStarted = true;
+
+  clearInterval(timerInterval);
+
+  const timerStage = document.getElementById('stage-timer');
+  timerStage.classList.add('fade-out');
+
+  setTimeout(() => {
+    timerStage.style.display = 'none';
+    const pumpkinStage = document.getElementById('stage-pumpkin');
+    pumpkinStage.classList.add('visible');
+    initPumpkinStage();   // запускаем всю логику с тыквой
+  }, 1000);
+}
+
+/* ============================================================
+   ЭКРАН 2: ТЫКВА И ПРОБУЖДЕНИЕ
+   ============================================================ */
+const SYNC_URL = "https://tulenoween-default-rtdb.firebaseio.com";
+
+const STAGES = [
+  "https://i.postimg.cc/QCg9tGCW/pumpkin-1.png",
+  "https://i.postimg.cc/MH0MT2Hf/pumpkin-2.png",
+  "https://i.postimg.cc/cC7gHyCg/pumpkin-3.png",
+  "https://i.postimg.cc/hv8zjWvd/pumpkin-4.png",
+  "https://i.postimg.cc/yxhgd4x9/pumpkin-5.png"
+];
+const MITI_IMG  = "https://i.postimg.cc/NMWghw9H/pumpkin-miti.png";
+const SLICE_IMG = "https://i.postimg.cc/NF89MqFL/pumpkin-slice.png";
+
+const LS_KEY   = "pumpkin_stage_v1";
+const USED_KEY = "pumpkin_used_v4";
+const HOLD_TIME = 2500;
+const MAX_STAGE = STAGES.length - 1;
+
+const isUsed   = () => localStorage.getItem(USED_KEY) === "1";
+const markUsed = () => localStorage.setItem(USED_KEY, "1");
+
+let currentStage = 0;
+let holding = false, holdStart = 0, holdRaf = null;
+let mitiActive = false;
+
+const swirlEl      = document.getElementById("swirl");
+const swirlSvg     = document.getElementById("swirl-svg");
+const glowEl       = document.getElementById("center-glow");
+const pumpkinEl    = document.getElementById("pumpkin");
+const sliceEl      = document.getElementById("slice");
+const stageEl      = document.getElementById("stage");
+const topTextEl    = document.getElementById("top-text");
+const bottomTextEl = document.getElementById("bottom-text");
+
+let pumpkinInitialized = false;
+
+function initPumpkinStage() {
+  if (pumpkinInitialized) return;
+  pumpkinInitialized = true;
+
+  buildSwirl();
+  loadStage();
+  bindPumpkinEvents();
+  setInterval(syncFromCloud, 5000);
+  setInterval(mitiFlash, 15000);
+}
+
+/* ===== Спираль ===== */
+function buildSwirl() {
+  const SIZE = 2000, CX = SIZE/2, CY = SIZE/2;
+  const MAX_R = 1450, TURNS = 8, STEPS = 1600;
+  const SPACING = MAX_R / TURNS;
+  const STROKE_PURPLE = SPACING * 1.02;
+  const STROKE_ORANGE = SPACING * 0.55;
+  const purple = "#7b1fd1";
+  const orange = "#ff7a00";
+  const deep   = "#2a0047";
+
+  function armPath(angleOffset) {
+    let d = "";
+    for (let i = 0; i <= STEPS; i++) {
+      const t = i / STEPS;
+      const a = angleOffset + t * TURNS * Math.PI * 2;
+      const r = t * MAX_R;
+      const x = CX + Math.cos(a) * r;
+      const y = CY + Math.sin(a) * r;
+      d += (i === 0 ? "M" : "L") + x.toFixed(1) + "," + y.toFixed(1) + " ";
     }
+    return d;
+  }
 
-    bgImage.onload = updateProgress;
-    bgImage.onerror = updateProgress;
-    bgImage.src = 'https://i.postimg.cc/7LCNLhkP/98C10CB2-6944-4C7D-B55A-64D129F1839E.jpg';
+  swirlSvg.innerHTML = `
+    <defs>
+      <radialGradient id="swirlShade" cx="50%" cy="50%" r="50%">
+        <stop offset="0%"  stop-color="#ffffff" stop-opacity="0.18"/>
+        <stop offset="45%" stop-color="#ffffff" stop-opacity="0"/>
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>
+      </radialGradient>
+    </defs>
+    <rect width="${SIZE}" height="${SIZE}" fill="${deep}"/>
+    <path d="${armPath(0)}"          fill="none" stroke="${purple}"
+          stroke-width="${STROKE_PURPLE}" stroke-linecap="round"/>
+    <path d="${armPath(Math.PI)}"    fill="none" stroke="${orange}"
+          stroke-width="${STROKE_ORANGE}" stroke-linecap="round"/>
+    <rect width="${SIZE}" height="${SIZE}" fill="url(#swirlShade)"/>
+  `;
+}
 
-    pumpkinImage.onload = updateProgress;
-    pumpkinImage.onerror = updateProgress;
-    pumpkinImage.src = 'https://i.postimg.cc/QCg9tGCW/pumpkin-1.png';
+/* ===== Стадии ===== */
+const GLOWS = ["#ff8c00", "#ffae00", "#ffc400", "#e0aaff", "#b388ff"];
 
-    /* Страховка: через 8 секунд принудительно скрыть лоадер */
-    setTimeout(() => {
-      loader.classList.add('hidden');
-    }, 8000);
+function applyStage(i, animate = true) {
+  if (i < 0) i = 0;
+  if (i > MAX_STAGE) i = MAX_STAGE;
+  currentStage = i;
+  if (!mitiActive) pumpkinEl.src = STAGES[i];
+  pumpkinEl.style.filter = `drop-shadow(0 0 45px ${GLOWS[i]}aa)`;
+  if (animate) {
+    pumpkinEl.style.transform = "scale(1.18)";
+    setTimeout(() => { pumpkinEl.style.transform = ""; }, 220);
+  }
+  updateTexts();
+  updateAmbientState();
+}
 
-    /* ===== Таймер ===== */
-    const targetDate = new Date(2026, 8, 27, 18, 0, 0).getTime(); // 27.09.2026 18:00
+function updateTexts() {
+  if (!isUsed()) {
+    topTextEl.classList.remove("show");
+    bottomTextEl.classList.remove("show");
+    return;
+  }
+  if (currentStage >= MAX_STAGE) {
+    topTextEl.textContent = "Вы пробудили его...";
+  } else {
+    topTextEl.textContent = "Ты Спас Его…";
+  }
+  topTextEl.classList.add("show");
+  if (currentStage < MAX_STAGE) {
+    bottomTextEl.classList.add("show");
+  } else {
+    bottomTextEl.classList.remove("show");
+  }
+}
 
-    function pad(n) { return String(n).padStart(2, '0'); }
+function updateAmbientState() {
+  if (!isUsed()) {
+    swirlEl.classList.remove("active");
+    glowEl.classList.remove("active");
+    glowEl.style.opacity = "";
+    swirlSvg.style.animationDuration = "10s";
+    pumpkinEl.classList.remove("shake");
+    return;
+  }
+  swirlEl.classList.add("active");
+  glowEl.classList.add("active");
+  if (currentStage >= MAX_STAGE) {
+    swirlSvg.style.animationDuration = "1.1s";
+    glowEl.style.opacity = "0.9";
+    pumpkinEl.classList.add("shake");
+  } else {
+    swirlSvg.style.animationDuration = "10s";
+    glowEl.style.opacity = "0.55";
+    pumpkinEl.classList.remove("shake");
+  }
+}
 
-    function updateTimer() {
-      const now = Date.now();
-      let diff = targetDate - now;
+/* ===== Мити (только на финале) ===== */
+function mitiFlash() {
+  if (holding) return;
+  if (currentStage < MAX_STAGE) return;
+  mitiActive = true;
+  pumpkinEl.src = MITI_IMG;
+  setTimeout(() => {
+    mitiActive = false;
+    pumpkinEl.src = STAGES[currentStage];
+  }, 140);
+}
 
-      if (diff <= 0) {
-        document.getElementById('days').textContent = '00';
-        document.getElementById('hours').textContent = '00';
-        document.getElementById('minutes').textContent = '00';
-        document.getElementById('seconds').textContent = '00';
-        return;
-      }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-
-      document.getElementById('days').textContent = pad(days);
-      document.getElementById('hours').textContent = pad(hours);
-      document.getElementById('minutes').textContent = pad(minutes);
-      document.getElementById('seconds').textContent = pad(seconds);
+/* ===== Firebase ===== */
+async function loadStage() {
+  let stage = parseInt(localStorage.getItem(LS_KEY) || "0", 10);
+  if (isNaN(stage)) stage = 0;
+  try {
+    const r = await fetch(SYNC_URL + "/stage.json", { cache: "no-store" });
+    const v = await r.json();
+    if (typeof v === "number") {
+      stage = v;
+      localStorage.setItem(LS_KEY, String(stage));
+    } else {
+      await saveStage(stage);
     }
+  } catch (e) { console.warn("Cloud read error:", e); }
+  applyStage(stage, false);
+}
 
-    updateTimer();
-    setInterval(updateTimer, 1000);
-  </script>
+async function saveStage(stage) {
+  localStorage.setItem(LS_KEY, String(stage));
+  try {
+    await fetch(SYNC_URL + "/stage.json", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(stage)
+    });
+  } catch (e) { console.warn("Cloud write error:", e); }
+}
+
+async function syncFromCloud() {
+  if (holding) return;
+  try {
+    const r = await fetch(SYNC_URL + "/stage.json", { cache: "no-store" });
+    const v = await r.json();
+    if (typeof v === "number" && v !== currentStage) {
+      applyStage(v, true);
+      localStorage.setItem(LS_KEY, String(v));
+    }
+  } catch (e) {}
+}
+
+/* ===== Удержание ===== */
+function startHold(e) {
+  if (e) e.preventDefault();
+  if (holding) return;
+  if (isUsed()) return;
+  if (currentStage >= MAX_STAGE) return;
+  holding = true;
+  holdStart = performance.now();
+  swirlEl.classList.add("active");
+  glowEl.classList.add("active");
+  animateHold();
+}
+
+function animateHold() {
+  if (!holding) return;
+  const t = Math.min((performance.now() - holdStart) / HOLD_TIME, 1);
+  const dur = 10 - t * 9.4;
+  swirlSvg.style.animationDuration = dur.toFixed(2) + "s";
+  pumpkinEl.style.transform = `scale(${1 + t * 0.15})`;
+  glowEl.style.opacity = (0.4 + t * 0.6).toFixed(2);
+  if (t >= 1) { finishHold(); return; }
+  holdRaf = requestAnimationFrame(animateHold);
+}
+
+function endHold() {
+  if (!holding) return;
+  holding = false;
+  cancelAnimationFrame(holdRaf);
+  pumpkinEl.style.transform = "";
+  updateAmbientState();
+}
+
+function finishHold() {
+  holding = false;
+  cancelAnimationFrame(holdRaf);
+  const next = Math.min(currentStage + 1, MAX_STAGE);
+  if (next === currentStage) { endHold(); return; }
+  markUsed();
+  sliceEl.classList.remove("fly");
+  void sliceEl.offsetWidth;
+  sliceEl.classList.add("fly");
+  setTimeout(() => {
+    applyStage(next, true);
+    saveStage(next);
+  }, 150);
+  setTimeout(endHold, 450);
+}
+
+function bindPumpkinEvents() {
+  stageEl.addEventListener("pointerdown", startHold);
+  window.addEventListener("pointerup", endHold);
+  window.addEventListener("pointercancel", endHold);
+  window.addEventListener("pointerleave", endHold);
+  stageEl.addEventListener("contextmenu", e => e.preventDefault());
+}
+</script>
 </body>
 </html>
